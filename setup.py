@@ -2,6 +2,7 @@
 
 from distutils.core import setup
 import os
+import djenesis
 
 
 def walk_data_files(output_path, scan_dir):
@@ -15,12 +16,33 @@ def walk_data_files(output_path, scan_dir):
             data_files.append( (output_dirname, files) )
     return data_files
 
-setup(name='djenesis',
-    version='0.9.9',
-    description='Bootstrap django projects using standard project templates',
-    author='Concentric Sky',
-    author_email='django@concentricsky.com',
+version = '.'.join(map(str, djenesis.VERSION))
+description = 'Djenesis begets Django projects' 
+try:
+    long_description = open('README.rst').read()
+except Exception as e:
+    long_description = description
+
+setup(
+    # meta data
+    name='djenesis',
+    version=version,
+    description=description,
+    long_description=long_description,
     url='http://github.com/concentricsky/djenesis',
+    author='Concentric Sky',
+    author_email='code@concentricsky.com',
+    classifiers=[
+        'Environment :: Console',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python',
+        'Framework :: Django',
+    ],
+
+    # install data
     scripts=['scripts/djenesis'],
+    packages=['djenesis'],
     data_files=walk_data_files('share/djenesis', 'templates'),
 )
