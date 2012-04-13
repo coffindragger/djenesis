@@ -101,7 +101,11 @@ class DjenesisScript(object):
     def _inflate_template_from_repo(self):
         scm, url = self.template.split('+')
         if scm == 'git':
-            call_args = ["git", "clone", url, self.output_directory]
+            if '@' in url:
+                url, branch = url.split('@',1)
+                call_args = ["git", "clone", "-b", branch, url, self.output_directory]
+            else:
+                call_args = ["git", "clone", url, self.output_directory]
         elif scm == 'svn':
             call_args = ["svn", "checkout", url, self.output_directory]
         elif scm == 'hg':
