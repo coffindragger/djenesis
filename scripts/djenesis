@@ -21,19 +21,20 @@ class DjenesisScript(object):
             # Build virtualenv if needed
             subprocess.call(["virtualenv", "--no-site-packages", "--distribute", self.virtualenv_directory])
 
+        cached_template = None
         if self.template:
-            # inflate project from template
+            # inflate template to temporary directory
             if any(self.template.startswith(scm) for scm in ('git+','svn+','hg+')):
-                # template in repo
-                self._inflate_template_from_repo()
+                # template in a repo
+                cached_template = self._inflate_template_from_repo()
             elif '://' in self.template:
                 # template at a url
                 cached_template = self._fetch_template_from_url()
                 self._inflate_template_from_file(cached_template)
-                os.remove(cached_template)
             else:
                 # template at local path
-                self._inflate_template_from_file(self.template)
+                cached_template = self._inflate_template_from_file(self.template)
+
 
             if not self.dont_remove_scm:
                 # remove .git, .hg or .svn files from template
@@ -43,31 +44,38 @@ class DjenesisScript(object):
                     if '.svn' in dirs:
                         shutil.rmtree(os.path.join(dirname, '.svn'), ignore_errors=True)
 
-            # Bootstrap virtualenv packages
-            if self.virtualenv_directory:
-                self._install_requirements()
 
-        elif self.virtualenv_directory:
-            # If virtualenv is present, use django-admin.py to inflate the project
-            self._env_pip("install", "Django")
-            dirname = os.path.dirname(self.output_directory)
-            projname = os.path.basename(self.output_directory)
-            subprocess.call([
-                os.path.join(self.virtualenv_directory, 'bin', "django-admin.py"), 
-                "startproject", 
-                projname
-            ], cwd=dirname)
 
-        else:
-            # No virtualenv found in path, fallback to our builtin template from django 1.3
-            template_path = os.path.realpath(os.path.join(sys.prefix, 'share', 'djenesis', 'templates', 'default'))
-            print("inflating from %s" % (template_path,))
-            shutil.copytree(template_path, self.output_directory, symlinks=True)
+        # run django-admin.py startproject                
+        self._env_pip("install", "Django")
+        dirname = os.path.dirname(self.output_directory)
+        projname = os.path.basename(self.output_directory)
+        arguments = [
+            os.path.join(self.virtualenv_directory, 'bin', "django-admin.py"), 
+            "startproject"
+        ]
+        if cached_template:
+            arguments.append("--template=%s" %(cached_template,))
+        arguments.append(projname)
+        subprocess.call(arguments, cwd=dirname)
+
+        # install requirements.txt into the virtualenv
+        self._install_requirements()
+
+        #cleanup 
+        if cached_template and os.path.exists(cached_template):
+            shutil.rmtree(cached_template)
+
+        # else:
+        #     # No virtualenv found in path, fallback to our builtin template from django 1.3
+        #     template_path = os.path.realpath(os.path.join(sys.prefix, 'share', 'djenesis', 'templates', 'default'))
+        #     print("inflating from %s" % (template_path,))
+        #     shutil.copytree(template_path, self.output_directory, symlinks=True)
 
 
     def _parse_commandline(self):
-        parser = optparse.OptionParser(usage="Usage: %prog [options] <output_directory> [package...]")
-        parser.add_option("-e", "--virtualenv", help="Specify where to create the virtualenv")
+        parser = optparse.OptionParser(usage="Usage: %prog [options] <projectname> [template]")
+        parser.add_option("-e", "--virtualenv", help="Specify the path to create the virtualenv")
         parser.add_option("-n", "--no-virtualenv", action='store_true', default=False, help="Don't create a virtualenv")
         parser.add_option("-i", "--initialize", action='store_true', default=False, help="Initialize from an existing project (dont remove scm files)")
 
@@ -86,7 +94,7 @@ class DjenesisScript(object):
 
         self.virtualenv_directory = None
         if self._has_virtualenv() and not getattr(options, 'no_virtualenv',False):
-            self.virtualenv_directory = getattr(options, 'virtualenv',None)
+            self.virtualenv_directory = getattr(options, 'virtualenv', None)
             if self.virtualenv_directory is None:
                 self.virtualenv_directory = self._real_path(os.path.join(os.path.dirname(self.output_directory), 'env-'+os.path.basename(self.output_directory)))
 
@@ -99,18 +107,20 @@ class DjenesisScript(object):
         return False
 
     def _inflate_template_from_repo(self):
+        temp_directory = tempfile.mkdtemp()
         scm, url = self.template.split('+')
         if scm == 'git':
-            if '@' in url:
-                url, branch = url.split('@',1)
+            if '#' in url:
+                url, branch = url.split('#',1)
                 call_args = ["git", "clone", "-b", branch, url, self.output_directory]
             else:
-                call_args = ["git", "clone", url, self.output_directory]
+                call_args = ["git", "clone", url, temp_directory]
         elif scm == 'svn':
-            call_args = ["svn", "checkout", url, self.output_directory]
+            call_args = ["svn", "checkout", url, temp_directory]
         elif scm == 'hg':
-            call_args = ["hg", "clone", url, self.output_directory]
+            call_args = ["hg", "clone", url, temp_directory]
         subprocess.call(call_args)
+        return temp_directory
 
     def _fetch_template_from_url(self):
         temp_file = tempfile.mktemp()
@@ -128,6 +138,9 @@ class DjenesisScript(object):
                 fh.close()
             if uh:
                 uh.close()
+
+        if temp_file:
+            temp_file = self._inflate_template_from_file(temp_file)
 
         return temp_file
 
@@ -165,10 +178,6 @@ class DjenesisScript(object):
         template_requirements = os.path.join(self.output_directory, 'requirements.txt')
         if os.path.exists(template_requirements):
             self._env_pip("install", "-r", template_requirements)
-        else:
-            # no requirements file was found, no packages were specified, install Django then
-            if len(self.pip_packages) < 1:
-                self.pip_packages = ['Django']
 
         if len(self.pip_packages) > 0:
             self._env_pip("install", *self.pip_packages)
@@ -177,6 +186,8 @@ class DjenesisScript(object):
         return os.path.abspath(os.path.join(cwd, s))
 
     def _env_pip(self, *args):
+        if not self.virtualenv_directory:
+            return
         subprocess.call([os.path.join(self.virtualenv_directory, 'bin', 'pip')] + list(args))
 
 
