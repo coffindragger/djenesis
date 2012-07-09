@@ -12,13 +12,16 @@ import zipfile
 
 
 class DjenesisScript(object):
+    VIRTUALENV_INSTALLATION_INSTRUCTIONS_URL="http://github.com/concentricsky/djenesis/README"
 
     def main(self,*args):
         # Parse commandline arguments
         self._parse_commandline()
 
-        if self.virtualenv_directory:
-            # Build virtualenv if needed
+        if self.use_virtualenvwrapper:
+            self._virtualenvwrapper("mkvirtualenv", self.virtualenvwrapper_name)
+        else:
+            #use --no-site-packages for old versions
             subprocess.call(["virtualenv", "--no-site-packages", "--distribute", self.virtualenv_directory])
 
         cached_template = None
@@ -44,14 +47,12 @@ class DjenesisScript(object):
                     if '.svn' in dirs:
                         shutil.rmtree(os.path.join(dirname, '.svn'), ignore_errors=True)
 
-
-
         # run django-admin.py startproject                
         self._env_pip("install", "Django")
         dirname = os.path.dirname(self.output_directory)
         projname = os.path.basename(self.output_directory)
         arguments = [
-            os.path.join(self.virtualenv_directory, 'bin', "django-admin.py"), 
+            os.path.join(self._bin_directory(), "django-admin.py"), 
             "startproject"
         ]
         if cached_template:
@@ -66,18 +67,13 @@ class DjenesisScript(object):
         if cached_template and os.path.exists(cached_template):
             shutil.rmtree(cached_template)
 
-        # else:
-        #     # No virtualenv found in path, fallback to our builtin template from django 1.3
-        #     template_path = os.path.realpath(os.path.join(sys.prefix, 'share', 'djenesis', 'templates', 'default'))
-        #     print("inflating from %s" % (template_path,))
-        #     shutil.copytree(template_path, self.output_directory, symlinks=True)
-
-
     def _parse_commandline(self):
-        parser = optparse.OptionParser(usage="Usage: %prog [options] <projectname> [template]")
+        parser = optparse.OptionParser(usage="Usage: %prog [options] <project_name> [template]")
         parser.add_option("-e", "--virtualenv", help="Specify the path to create the virtualenv")
-        parser.add_option("-n", "--no-virtualenv", action='store_true', default=False, help="Don't create a virtualenv")
         parser.add_option("-i", "--initialize", action='store_true', default=False, help="Initialize from an existing project (dont remove scm files)")
+        parser.add_option("-w", "--use-virtualenvwrapper", action='store_true', default=False, help="use 'mkvirtualenv' and 'workon' from virtualenvwrapper")
+        parser.add_option("--virtualenvwrapper-name", help="the name of the virtualenvwrapper environment to use (defaults to project_name)")
+        parser.add_option("--virtualenvwrapper-path", default="/usr/local/bin/virtualenvwrapper.sh", help="the path to the virtualenvwrapper")
 
         (options, args) = parser.parse_args()
         if len(args) < 1:
@@ -86,25 +82,52 @@ class DjenesisScript(object):
 
         self.template = None
         self.output_directory = self._real_path(args.pop(0))
+        self.project_name = os.path.basename(self.output_directory)
+
         if len(args) > 0:
             self.template = args.pop(0)
         self.pip_packages = args
 
         self.dont_remove_scm = getattr(options, 'initialize', False)
 
-        self.virtualenv_directory = None
-        if self._has_virtualenv() and not getattr(options, 'no_virtualenv',False):
-            self.virtualenv_directory = getattr(options, 'virtualenv', None)
-            if self.virtualenv_directory is None:
-                self.virtualenv_directory = self._real_path(os.path.join(os.path.dirname(self.output_directory), 'env-'+os.path.basename(self.output_directory)))
+        self.virtualenv_directory = getattr(options, 'virtualenv', None)
+
+        self.use_virtualenvwrapper = getattr(options, 'use_virtualenvwrapper', False)
+        self.virtualenvwrapper_name = getattr(options, 'virtualenvwrapper_name', None)
+        if self.virtualenvwrapper_name is None:
+            self.virtualenvwrapper_name = self.project_name
+        self.virtualenvwrapper_path = getattr(options, 'virtualenvwrapper_path', None)
+        self.workon_home = os.environ.get('WORKON_HOME', None)
+
+        if self.use_virtualenvwrapper:
+            if not os.path.exists(self.virtualenvwrapper_path):
+                self.use_virtualenvwrapper = False
+                print("Could not find virtualenvwrapper.sh. Is mkvirtualenv installed?\nFalling back to virtualenv...")
+            if self.workon_home is None:
+                self.use_virtualenvwrapper = False
+                print("WORKON_HOME environment variable not found. Is mkvirtualenv installed?\nFalling back to virtualenv...")
+            elif not os.path.exists(self.workon_home):
+                os.makedirs(self.workon_home)
+
+        if self.virtualenv_directory is None:
+            self.virtualenv_directory = self._real_path(os.path.join(os.path.dirname(self.output_directory), 'env-'+os.path.basename(self.output_directory)))
+        if not self._has_virtualenv():
+            print("Could not find virtualenv! Please install it before continuing.\nSee %s for installation instructions." % (VIRTUALENV_INSTALLATION_INSTRUCTIONS_URL))
 
     def _has_virtualenv(self):
         try:
-            subprocess.call(["virtualenv", "--version"])
+            subprocess.call(["virtualenv", "--version"], stdout=subprocess.PIPE)
             return True
         except OSError as e:
             pass
         return False
+
+    def _virtualenvwrapper(self, *args):
+        if not os.path.exists(self.virtualenvwrapper_path) or not self.workon_home:
+            return -1
+        args = ["bash -c 'source %s; %s'" % (self.virtualenvwrapper_path, ' '.join(args))]
+        print "trying to run: %s" % (args)
+        return subprocess.call(args, shell=True)
 
     def _inflate_template_from_repo(self):
         temp_directory = tempfile.mkdtemp()
@@ -185,10 +208,14 @@ class DjenesisScript(object):
     def _real_path(self, s, cwd='.'):
         return os.path.abspath(os.path.join(cwd, s))
 
+    def _bin_directory(self):
+        directory = self.virtualenv_directory
+        if self.use_virtualenvwrapper:
+            directory = os.path.join(self.workon_home, self.virtualenvwrapper_name)
+        return os.path.join(directory, 'bin',)
+
     def _env_pip(self, *args):
-        if not self.virtualenv_directory:
-            return
-        subprocess.call([os.path.join(self.virtualenv_directory, 'bin', 'pip')] + list(args))
+        subprocess.call([os.path.join(self._bin_directory(), 'pip')] + list(args))
 
 
 
