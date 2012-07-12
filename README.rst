@@ -1,4 +1,3 @@
-
 Description
 ===========
 Djenesis begets django projects.
@@ -14,13 +13,13 @@ Virtualenv Installation
 
 Mac OS X
 --------
-Virtualenv requires the 'install-name-tool' command line utility to run properly on OSX.  But by default OS X does not ship with this installed.  It can be installed either by installing Xcode from the Mac App Store, or if you would like to avoid a several gigabyte download you can install the "Command Line Tools for Xcode" from [Apple Developer Downloads](https://developer.apple.com/downloads/index.action).  Note that both of these will require the creation of an Apple ID if you do not already have one.
+Virtualenv requires the 'install-name-tool' command line utility to run properly on OSX.  But by default OS X does not ship with this installed.  It can be installed either by installing Xcode from the Mac App Store, or if you would like to avoid a several gigabyte download you can install the "Command Line Tools for Xcode" from `Apple Developer Downloads <https://developer.apple.com/downloads/index.action>`_.  Note that both of these will require the creation of an Apple ID if you do not already have one.
 
-Once either Xcode or the Xcode Command Line Tools are installed, you can install virtualenv with ``pip`` -- if you don't have pip, OSX ships with the ``easy_install`` command:
+Once either Xcode or the Xcode Command Line Tools are installed, you can install virtualenv with ``pip`` -- if you don't have pip, OSX ships with the ``easy_install`` command::
     
     pip install virtualenv
     
-*or*
+*or*::
     
     easy_install virtualenv
 
@@ -28,25 +27,30 @@ Once either Xcode or the Xcode Command Line Tools are installed, you can install
 
 Windows
 -------
-Download [ez_setup.py](http://peak.telecommunity.com/dist/ez_setup.py) and install:
+
+Make sure ``C:\Python27\Scripts`` is in your PATH variable. *(Replace "Python27" with your version)*
+
+Download `ez_setup.py <http://peak.telecommunity.com/dist/ez_setup.py>`_ and run it::
 
     python ez_setup.py
     
-Then you can install virtualenv with easy_install:
+Then you can install virtualenv with easy_install::
 
     easy_install virtualenv
 
 
 Ubuntu
 ------
-Install pip and virtualenv from the package repository:
+Install pip and virtualenv from the package repository::
 
     apt-get install python-pip python-virtualenv
 
 Redhat
 ------
 
-    yum install python-virtualenv
+Install pip and virtualenv from the package repository::
+
+    yum install python-pip python-virtualenv
 
 
 Tips & Tricks
@@ -56,7 +60,7 @@ Pip Download Cache
 ~~~~~~~~~~~~~~~~~~
 
 set the environment variable PIP_DOWNLOAD_CACHE, to reduce the need to download pip packages multiple times.
-e.g.
+e.g.::
 
     export PIP_DOWNLOAD_CACHE=~/.pip_download_cache
 
@@ -69,7 +73,7 @@ User Stories
 
 I want to create a new default django project
 ---------------------------------------------
-The simplest story, give djenesis a project name and it will initialze a new project.
+The simplest story, give djenesis a project name and it will initialze a new project::
 
     $ djenesis djangoproject
 
@@ -78,7 +82,7 @@ This will create a new virtualenv environment at ``./env-djangoproject``, instal
 
 I want to create a new django project based on my custom template
 -----------------------------------------------------------------
-Probably the most common use case, start a new project based on a preferred project layout
+Probably the most common use case, start a new project based on a preferred project layout::
 
     $ djenesis mynewproject git+https://github.com/concentricsky/djenesis-template.git
 
@@ -89,7 +93,7 @@ This will also create a virtualenv named ``env-mynewproject`` and install any pa
 
 I want to start working on an existing django project
 -----------------------------------------------------
-A convienent way to start working on a project.
+A convienent way to start working on a project::
 
     $ djenesis -i projectname git+git@github.com:user/project.git
 
@@ -100,7 +104,7 @@ this will initialize a virtualenv ``env-projectname`` and clone the project into
 
 I like using mkvirtualenv and workon
 ------------------------------------
-The virtualenvwrapper package is popular and is a convienent way to maintain a lot of different projects.
+The virtualenvwrapper package is popular and is a convienent way to maintain a lot of different projects::
 
     $ djenesis -w thenewproject 
 
