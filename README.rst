@@ -24,7 +24,7 @@ New Project From Project Template
 Most people have worked out a particular project structure that they prefer for their django projects.
 Inflating from a scm repository is a convient way to maintain and manage a project template struture.
 
-    $ djenesis projectname git+https://github.com/concentricsky/csky-django-template.git
+    $ djenesis projectname git+https://github.com/concentricsky/djenesis-template.git
 
 this will inflate a new project based on the template found at the git+url in a directory named ``projectname`` 
 This will also create a virtualenv named ``env-projectname`` and install any packages found in requirements.txt found at the toplevel directory in the template.
