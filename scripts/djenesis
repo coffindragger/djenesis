@@ -12,7 +12,9 @@ import zipfile
 
 
 class DjenesisScript(object):
-    VIRTUALENV_INSTALLATION_INSTRUCTIONS_URL="http://github.com/concentricsky/djenesis/README"
+    VIRTUALENV_INSTALLATION_INSTRUCTIONS_URL="https://github.com/concentricsky/djenesis#virtualenv-installation"
+    VIRTUALENVWRAPPER_PATH_DEFAULT="/usr/local/bin/virtualenvwrapper.sh"
+
 
     def main(self,*args):
         # Parse commandline arguments
@@ -73,7 +75,7 @@ class DjenesisScript(object):
         parser.add_option("-i", "--initialize", action='store_true', default=False, help="Initialize from an existing project (dont remove scm files)")
         parser.add_option("-w", "--use-virtualenvwrapper", action='store_true', default=False, help="use 'mkvirtualenv' and 'workon' from virtualenvwrapper")
         parser.add_option("--virtualenvwrapper-name", help="the name of the virtualenvwrapper environment to use (defaults to project_name)")
-        parser.add_option("--virtualenvwrapper-path", default="/usr/local/bin/virtualenvwrapper.sh", help="the path to the virtualenvwrapper")
+        parser.add_option("--virtualenvwrapper-path", default=VIRTUALENVWRAPPER_PATH_DEFAULT, help="the path to the virtualenvwrapper")
 
         (options, args) = parser.parse_args()
         if len(args) < 1:
@@ -86,17 +88,23 @@ class DjenesisScript(object):
 
         if len(args) > 0:
             self.template = args.pop(0)
+        if self.template is None:
+            self.template = os.environ.get('DJENESIS_DEFAULT_TEMPLATE', None)
+
         self.pip_packages = args
 
         self.dont_remove_scm = getattr(options, 'initialize', False)
 
         self.virtualenv_directory = getattr(options, 'virtualenv', None)
 
-        self.use_virtualenvwrapper = getattr(options, 'use_virtualenvwrapper', False)
+        self.use_virtualenvwrapper = ('DJENESIS_VIRTUALENVWRAPPER' in os.environ) or getattr(options, 'use_virtualenvwrapper', None)
         self.virtualenvwrapper_name = getattr(options, 'virtualenvwrapper_name', None)
         if self.virtualenvwrapper_name is None:
             self.virtualenvwrapper_name = self.project_name
-        self.virtualenvwrapper_path = getattr(options, 'virtualenvwrapper_path', None)
+        self.virtualenvwrapper_path = os.environ.get('DJENESIS_VIRTUALENVWRAPPER_PATH', None))
+        options_wrapper_path = getattr(options, 'virtualenvwrapper_path', None) 
+        if options_wrapper_path != VIRTUALENVWRAPPER_PATH_DEFAULT:
+            self.virtualenvwrapper_path = options_wrapper_path
         self.workon_home = os.environ.get('WORKON_HOME', None)
 
         if self.use_virtualenvwrapper:
