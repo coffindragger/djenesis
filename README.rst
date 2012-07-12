@@ -14,12 +14,40 @@ Virtualenv Installation
 
 Mac OS X
 --------
+Virtualenv requires the 'install-name-tool' command line utility to run properly on OSX.  But by default OS X does not ship with this installed.  It can be installed either by installing Xcode from the Mac App Store, or if you would like to avoid a several gigabyte download you can install the "Command Line Tools for Xcode" from [Apple Developer Downloads](https://developer.apple.com/downloads/index.action).  Note that both of these will require the creation of an Apple ID if you do not already have one.
+
+Once either Xcode or the Xcode Command Line Tools are installed, you can install virtualenv with ``pip`` -- if you don't have pip, OSX ships with the ``easy_install`` command:
+    
+    pip install virtualenv
+    
+*or*
+    
+    easy_install virtualenv
+
+
 
 Windows
 -------
+Download [ez_setup.py](http://peak.telecommunity.com/dist/ez_setup.py) and install:
+
+    python ez_setup.py
+    
+Then you can install virtualenv with easy_install:
+
+    easy_install virtualenv
+
 
 Ubuntu
 ------
+Install pip and virtualenv from the package repository:
+
+    apt-get install python-pip python-virtualenv
+
+Redhat
+------
+
+    yum install python-virtualenv
+
 
 Tips & Tricks
 -------------
