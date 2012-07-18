@@ -101,7 +101,7 @@ class DjenesisScript(object):
         self.virtualenvwrapper_name = getattr(options, 'virtualenvwrapper_name', None)
         if self.virtualenvwrapper_name is None:
             self.virtualenvwrapper_name = self.project_name
-        self.virtualenvwrapper_path = os.environ.get('DJENESIS_VIRTUALENVWRAPPER_PATH', None))
+        self.virtualenvwrapper_path = os.environ.get('DJENESIS_VIRTUALENVWRAPPER_PATH', None)
         options_wrapper_path = getattr(options, 'virtualenvwrapper_path', None) 
         if options_wrapper_path != VIRTUALENVWRAPPER_PATH_DEFAULT:
             self.virtualenvwrapper_path = options_wrapper_path
