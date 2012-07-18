@@ -75,7 +75,7 @@ class DjenesisScript(object):
         parser.add_option("-i", "--initialize", action='store_true', default=False, help="Initialize from an existing project (dont remove scm files)")
         parser.add_option("-w", "--use-virtualenvwrapper", action='store_true', default=False, help="use 'mkvirtualenv' and 'workon' from virtualenvwrapper")
         parser.add_option("--virtualenvwrapper-name", help="the name of the virtualenvwrapper environment to use (defaults to project_name)")
-        parser.add_option("--virtualenvwrapper-path", default=VIRTUALENVWRAPPER_PATH_DEFAULT, help="the path to the virtualenvwrapper")
+        parser.add_option("--virtualenvwrapper-path", default=DjenesisScript.VIRTUALENVWRAPPER_PATH_DEFAULT, help="the path to the virtualenvwrapper")
 
         (options, args) = parser.parse_args()
         if len(args) < 1:
@@ -101,9 +101,9 @@ class DjenesisScript(object):
         self.virtualenvwrapper_name = getattr(options, 'virtualenvwrapper_name', None)
         if self.virtualenvwrapper_name is None:
             self.virtualenvwrapper_name = self.project_name
-        self.virtualenvwrapper_path = os.environ.get('DJENESIS_VIRTUALENVWRAPPER_PATH', None)
-        options_wrapper_path = getattr(options, 'virtualenvwrapper_path', None) 
-        if options_wrapper_path != VIRTUALENVWRAPPER_PATH_DEFAULT:
+        self.virtualenvwrapper_path = os.environ.get('DJENESIS_VIRTUALENVWRAPPER_PATH', DjenesisScript.VIRTUALENVWRAPPER_PATH_DEFAULT)
+        options_wrapper_path = getattr(options, 'virtualenvwrapper_path', None)
+        if options_wrapper_path != None:
             self.virtualenvwrapper_path = options_wrapper_path
         self.workon_home = os.environ.get('WORKON_HOME', None)
 
