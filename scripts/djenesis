@@ -200,7 +200,7 @@ class DjenesisScript(object):
             zf.extractall(path=self.output_directory)
             zf.close()
             return True
-        except zipfile.BadZipFile:
+        except zipfile.BadZipfile:
             pass
 
 
