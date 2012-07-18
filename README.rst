@@ -112,10 +112,10 @@ The virtualenvwrapper package is popular and is a convienent way to maintain a l
 
 Template URL Formats
 ====================
-You can specify a template as either a path to a local file, a URL to a remote .zip or .tgz file, or as a SCM url:: 
+You can specify a template as either a path to a local file, a URL to a remote .tgz file, or as a SCM url:: 
 
   /path/to/local/directory
-  http://example.com/django-template.zip
+  http://example.com/django-template.tgz
   git+git@github.com:user/project
   git+ssh://user@example.com:port/repository.git#branch
   hg+https://bitbucket.org/user/project
